@@ -7,8 +7,8 @@
     <style>
         :root {
             --paper: #fdfaf5;
-            --accent: #e0c9a6; /* Gold/Cream accent to match the cover */
-            --dark: #1a1a2e;   /* Dark blue from your image */
+            --accent: #e0c9a6; 
+            --dark: #1a1a2e;   
         }
 
         body {
@@ -21,6 +21,7 @@
             min-height: 100vh;
             padding: 15px;
             color: white;
+            overflow-x: hidden;
         }
 
         /* --- FRONT COVER --- */
@@ -29,7 +30,7 @@
             width: 100%;
             max-width: 360px;
             aspect-ratio: 1 / 1;
-            background-image: url('images/cover.png');
+            background-image: url('cover.png');
             background-size: cover;
             background-position: center;
             border-radius: 10px;
@@ -44,7 +45,7 @@
 
         #cover-page button {
             background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
             border: 1px solid var(--accent);
             color: white;
             padding: 12px 30px;
@@ -53,11 +54,6 @@
             cursor: pointer;
             border-radius: 30px;
             transition: 0.3s;
-        }
-
-        #cover-page button:hover {
-            background: var(--accent);
-            color: var(--dark);
         }
 
         /* --- ALBUM INTERIOR --- */
@@ -81,10 +77,11 @@
 
         .photo-item {
             background: white;
-            aspect-ratio: 3 / 4; /* Your requested 3:4 ratio */
+            aspect-ratio: 3 / 4; 
             overflow: hidden;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             border: 4px solid white;
+            cursor: zoom-in;
         }
 
         .photo-item img {
@@ -93,7 +90,26 @@
             object-fit: cover;
         }
 
-        /* --- NAVIGATION --- */
+        /* --- ZOOM LIGHTBOX --- */
+        #lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #lightbox img {
+            max-width: 95%;
+            max-height: 90%;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* --- CONTROLS --- */
         .controls {
             display: flex;
             justify-content: space-between;
@@ -105,16 +121,15 @@
             background: var(--dark);
             color: white;
             border: none;
-            padding: 10px;
+            padding: 12px;
             flex: 1;
             border-radius: 4px;
             font-size: 0.8rem;
             cursor: pointer;
+            font-weight: bold;
         }
 
-        .controls button:disabled {
-            opacity: 0.2;
-        }
+        .controls button:disabled { opacity: 0.2; }
 
         .page-info {
             text-align: center;
@@ -123,23 +138,89 @@
             margin-top: 15px;
             font-weight: bold;
         }
-
-        /* Mobile specific spacing */
-        @media (max-width: 480px) {
-            .photo-grid { gap: 8px; }
-            #album-container { padding: 12px; }
-        }
     </style>
 </head>
 <body>
 
     <div id="cover-page">
-        <button onclick="openAlbum()">VIEW MEMORIES</button>
+        <button onclick="openAlbum()">VIEW ALBUM</button>
     </div>
 
     <div id="album-container">
         <div class="photo-grid" id="photo-grid"></div>
-        
+        <div class="controls">
+            <button id="prevBtn" onclick="movePage(-1)">PREV</button>
+            <button onclick="closeAlbum()" style="background:#555;">CLOSE</button>
+            <button id="nextBtn" onclick="movePage(1)">NEXT</button>
+        </div>
+        <div class="page-info" id="page-display">Page 1 / 150</div>
+    </div>
+
+    <div id="lightbox" onclick="this.style.display='none'">
+        <img id="zoom-img" src="">
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const maxPages = 150;
+        const perPage = 4;
+        const totalPhotos = 181;
+
+        function openAlbum() {
+            document.getElementById('cover-page').style.display = 'none';
+            document.getElementById('album-container').style.display = 'block';
+            displayPage();
+        }
+
+        function closeAlbum() {
+            document.getElementById('cover-page').style.display = 'flex';
+            document.getElementById('album-container').style.display = 'none';
+        }
+
+        function displayPage() {
+            const grid = document.getElementById('photo-grid');
+            grid.innerHTML = ''; 
+
+            const startPhoto = (currentPage - 1) * perPage + 1;
+            const endPhoto = Math.min(startPhoto + 3, totalPhotos);
+
+            for (let i = startPhoto; i <= endPhoto; i++) {
+                const item = document.createElement('div');
+                item.className = 'photo-item';
+                
+                const img = document.createElement('img');
+                img.src = `${i}.jpg`; 
+                img.loading = "lazy";
+                
+                // Lightbox Trigger
+                item.onclick = function() {
+                    document.getElementById('zoom-img').src = img.src;
+                    document.getElementById('lightbox').style.display = 'flex';
+                };
+
+                // Case Sensitivity Fallback
+                img.onerror = function() {
+                    if (this.src.endsWith('.jpg')) this.src = this.src.replace('.jpg', '.jpeg');
+                    else if (this.src.endsWith('.jpeg')) this.src = this.src.replace('.jpeg', '.JPG');
+                };
+
+                item.appendChild(img);
+                grid.appendChild(item);
+            }
+
+            document.getElementById('page-display').innerText = `Page ${currentPage} of ${maxPages}`;
+            document.getElementById('prevBtn').disabled = (currentPage === 1);
+            document.getElementById('nextBtn').disabled = (currentPage === maxPages);
+        }
+
+        function movePage(step) {
+            currentPage += step;
+            displayPage();
+            window.scrollTo(0,0);
+        }
+    </script>
+</body>
+</html>
         <div class="controls">
             <button id="prevBtn" onclick="movePage(-1)">PREVIOUS</button>
             <button onclick="closeAlbum()" style="background:#555;">BACK TO COVER</button>
